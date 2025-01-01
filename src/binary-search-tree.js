@@ -1,49 +1,152 @@
 const { NotImplementedError } = require('../extensions/index.js');
 
-// const { Node } = require('../extensions/list-tree.js');
+const { Node } = require('../extensions/list-tree.js');
+
+class BSTNode extends Node {
+  constructor(data) {
+    super(data);
+    this.parent = null;
+  }
+}
 
 /**
-* Implement simple binary search tree according to task description
-* using Node from extensions
-*/
-class BinarySearchTree {
+ * Implement simple binary search tree according to task description
+ * using Node from extensions
+ */
+class BST {
+  #root = null;
+
+  static isNode(v) {
+    return v instanceof BSTNode;
+  }
+
+  static isLeafNode(node) {
+    return this.isNode(node) && !node.left && !node.right;
+  }
+
+  #append = (parent, node) => {
+    if (!BST.isNode(parent) || !BST.isNode(node)) {
+      return;
+    }
+    const branch = parent.data > node.data ? 'left' : 'right';
+    node.parent = parent;
+    parent[branch] = node;
+  };
+
+  #findNode = (data, start = this.#root) => {
+    for (let node = start; node; ) {
+      if (node.data === data) {
+        return node;
+      }
+      node = node.data > data ? node.left : node.right;
+    }
+    return null;
+  };
+
+  #addNode = (data) => {
+    const newNode = new BSTNode(data);
+
+    if (!this.#root) {
+      this.#root = newNode;
+    }
+    for (let node = this.#root, parent; node; ) {
+      if (node.data === data) {
+        break;
+      }
+      parent = node;
+      node = node.data > data ? node.left : node.right;
+
+      if (!node) {
+        this.#append(parent, newNode);
+      }
+    }
+  };
+
+  #removeLeafNode = (node) => {
+    if (node === this.#root) {
+      this.#root = null;
+      return;
+    }
+    const branch = node.parent.data > node.data ? 'left' : 'right';
+    node.parent[branch] = null;
+  };
+
+  #removeNodeWithBothChildren = (node) => {
+    const minRight = this.#getMin(node.right);
+    const branch = minRight.parent.left === minRight ? 'left' : 'right';
+
+    node.data = minRight.data;
+    minRight.parent[branch] = minRight.right;
+
+    // minRight is the minimum and cannot have a left node
+    if (minRight.right) {
+      minRight.right.parent = minRight.parent;
+    }
+  };
+
+  #removeNodeWithOneChild = (node) => {
+    const { parent } = node;
+    const branch = node.left ? 'left' : 'right';
+
+    if (!parent) {
+      this.#root = node[branch];
+      node[branch].parent = null;
+    } else {
+      this.#append(parent, node[branch]);
+    }
+  };
+
+  #removeNode = (node) => {
+    if (!BST.isNode(node)) {
+      return;
+    }
+    if (BST.isLeafNode(node)) {
+      return this.#removeLeafNode(node);
+    }
+    return node.left && node.right
+      ? this.#removeNodeWithBothChildren(node)
+      : this.#removeNodeWithOneChild(node);
+  };
+
+  #getMin = (start = this.#root) => {
+    return start?.left ? this.#getMin(start.left) : start;
+  };
+
+  #getMax = (start = this.#root) => {
+    return start?.right ? this.#getMax(start.right) : start;
+  };
 
   root() {
-    throw new NotImplementedError('Not implemented');
-    // remove line with error and write your code here
+    return this.#root;
   }
 
-  add(/* data */) {
-    throw new NotImplementedError('Not implemented');
-    // remove line with error and write your code here
+  add(...args) {
+    args.forEach(this.#addNode);
+    return this;
   }
 
-  has(/* data */) {
-    throw new NotImplementedError('Not implemented');
-    // remove line with error and write your code here
+  remove(...args) {
+    args.forEach((data) => this.#removeNode(this.find(data)));
+    return this;
   }
 
-  find(/* data */) {
-    throw new NotImplementedError('Not implemented');
-    // remove line with error and write your code here
+  find(data) {
+    return this.#findNode(data);
   }
 
-  remove(/* data */) {
-    throw new NotImplementedError('Not implemented');
-    // remove line with error and write your code here
+  has(data) {
+    return Boolean(this.find(data));
   }
 
   min() {
-    throw new NotImplementedError('Not implemented');
-    // remove line with error and write your code here
+    return this.#getMin()?.data;
   }
 
   max() {
-    throw new NotImplementedError('Not implemented');
-    // remove line with error and write your code here
+    return this.#getMax()?.data;
   }
 }
 
 module.exports = {
-  BinarySearchTree
+  BinarySearchTree: BST,
 };
