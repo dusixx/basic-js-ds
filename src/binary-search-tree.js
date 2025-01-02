@@ -24,6 +24,10 @@ class BST {
     return this.isNode(node) && !node.left && !node.right;
   }
 
+  #isRootNode = (node) => {
+    return BST.isNode(node) && !node.parent && node === this.#root;
+  };
+
   #append = (parent, node) => {
     if (!BST.isNode(parent) || !BST.isNode(node)) {
       return;
@@ -44,26 +48,27 @@ class BST {
   };
 
   #addNode = (data) => {
+    let parent;
+    let node = this.#root;
     const newNode = new BSTNode(data);
 
-    if (!this.#root) {
+    if (!node) {
       this.#root = newNode;
     }
-    for (let node = this.#root, parent; node; ) {
+    while (node) {
       if (node.data === data) {
         break;
       }
       parent = node;
       node = node.data > data ? node.left : node.right;
-
-      if (!node) {
-        this.#append(parent, newNode);
-      }
+    }
+    if (!node) {
+      this.#append(parent, newNode);
     }
   };
 
   #removeLeafNode = (node) => {
-    if (node === this.#root) {
+    if (this.#isRootNode(node)) {
       this.#root = null;
       return;
     }
@@ -85,14 +90,13 @@ class BST {
   };
 
   #removeNodeWithOneChild = (node) => {
-    const { parent } = node;
-    const branch = node.left ? 'left' : 'right';
+    const child = node.left ?? node.right;
 
-    if (!parent) {
-      this.#root = node[branch];
-      node[branch].parent = null;
+    if (this.#isRootNode(node)) {
+      this.#root = child;
+      child.parent = null;
     } else {
-      this.#append(parent, node[branch]);
+      this.#append(node.parent, child);
     }
   };
 
